@@ -1,14 +1,13 @@
 Install Azure-Devops-Python-Api : https://github.com/Microsoft/azure-devops-python-api
 
-Install VSTS : pip3 install vsts
-
-Set up your Devops personal access token in config.json
 
 Create file `config.json` with content :
 
-    {"token":"YOUR_TOKEN_HERE"}
+    {"token":"YOUR_TOKEN_HERE","cookie":"YOUR_COOKIE_HERE"}
 
-(Set up your Devops personal access token in `config.json`)
+Get the Personal Access Token from your Azure Devops Account
+
+Get the cookie from the browser and conver it to a dictionary
 
 Run `test.py`
 
