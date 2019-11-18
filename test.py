@@ -4,10 +4,12 @@ sys.path.append(os.getcwd())
 sys.path.append(os.getcwd()+"/DevOps")
 from config import *
 from devopsApi import *
+import requests
 
 personal_access_token = getMyToken()
-organization_url = 'https://dev.azure.com/office'
+my_cookie=getMyCookie()
 
-devopsClient = initialiseDevops(personal_access_token,organization_url)
-allProjects=getAllProjects(devopsClient)
-print(allProjects)
+workitem_id=3741285
+workitem=getWorkItemJsonData(workitem_id,my_cookie)
+print(workitem)
+

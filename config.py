@@ -4,3 +4,6 @@ with open('config.json', 'r') as f:
 
 def getMyToken():
 	return data["token"]
+
+def getMyCookie():
+	return data["cookie"]
