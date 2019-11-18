@@ -2,9 +2,11 @@ import pprint
 import requests
 import json
 import random
+import pandas as pd
 
 workItemsDataFile="data/workitemsdata.json"
 prDataFile="data/prdata.json"
+queriedWorkItemsDataFile="data/QueriedWorkItems.csv"
 
 
 def fetchStoredData(file):
@@ -16,6 +18,11 @@ def fetchStoredData(file):
 
 workItemsData=fetchStoredData(workItemsDataFile)
 prData=fetchStoredData(prDataFile)
+
+def getAllQueriedWorkIDs():
+    df=pd.read_csv(queriedWorkItemsDataFile)
+    return df["ID"].tolist()
+
 
 def makeGETRequest(url,cookie):
     response = requests.get(url, cookies=cookie)
@@ -49,6 +56,7 @@ def getPullRequestID(workitemdata):
 def getPRJsonData(url_first_half,pr_id,cookie):
     repo_id="28406b7c-4cef-44f1-bb35-15e73d905ffb"
     url=url_first_half+"_apis/git/repositories/"+repo_id+"/pullRequests/"+pr_id+"?api-version=5.1"
+    #print(url)
     data=makeGETRequest(url,cookie)
     if(data):
         return parsePRData(data,pr_id)
@@ -64,6 +72,7 @@ def parsePRData(prData,pr_id):
 
 def getWorkItemJsonData(url_first_half,workitem_id,cookie):
     url=url_first_half+"_apis/wit/workitems?ids="+str(workitem_id)+"&$expand=all&api-version=5.1"
+    #print(url)
     data=makeGETRequest(url,cookie)
     if(data):
         return parseWorkItemData(url_first_half,data,cookie)
@@ -72,7 +81,7 @@ def parseWorkItemData(url_first_half,workitemdata,cookie):
     data=workitemdata["value"][0]
     new_data={}
     fields=data["fields"]
-    fields_keys=["System.Id","System.WorkItemType","System.Title","System.Description","Microsoft.VSTS.TCM.ReproSteps","Office.Common.ExpectedOutcome","Office.Common.ActualOutcome","System.Tags"]
+    fields_keys=["System.Id",'System.TeamProject',"System.WorkItemType","System.Title","System.Description","Microsoft.VSTS.TCM.ReproSteps","Office.Common.ExpectedOutcome","Office.Common.ActualOutcome","System.Tags"]
     for k in fields_keys:
         if k in fields:
             new_k=k.replace("System.","").replace("Microsoft.VSTS.TCM.","").replace("Office.Common.","")
@@ -90,17 +99,22 @@ def parseWorkItemData(url_first_half,workitemdata,cookie):
 
 def getAllWorkItems(url_first_half,cookie):
     existing_workitem_ids=[s["Id"] for s in workItemsData]
-    #work_item_id= 3111300
+    all_workitem_ids=getAllQueriedWorkIDs()
     count=0
-    while count < 100:
-        work_item_id=random.randint(2000000, 4000000) 
+    #while count < 200:
+    for work_item_id in all_workitem_ids[-500:-200]:
+        #work_item_id=random.randint(3000000, 5000000) 
         if work_item_id not in existing_workitem_ids:
             try:
                 workitemdata=getWorkItemJsonData(url_first_half,work_item_id,cookie)
                 if(workitemdata):
                     print(count,":",work_item_id ," SUCCESS")
-                    #count+=1
                     workItemsData.append(workitemdata)
+                    if "PR_id" in workitemdata:
+                        pr_data = getPRJsonData(url_first_half,workitemdata["PR_id"],cookie)
+                        if(pr_data):
+                            print("\t PR SUCCESS")
+                            prData.append(pr_data)
                 else:
                     print(count,":",work_item_id ," FAILED")
 
@@ -110,17 +124,21 @@ def getAllWorkItems(url_first_half,cookie):
         count+=1
     with open(workItemsDataFile,"w") as f:
         json.dump(workItemsData, f)
+    with open(prDataFile,"w") as f:
+        json.dump(prData, f)
 
 
 def getPrsForWorkItems(url_first_half,cookie):
+    existing_pr_ids=[s["Id"] for s in prData]
     for workitem in workItemsData:
         #print(workitem)
         if("PR_id" in workitem):
             pr_id=workitem["PR_id"]
-            pr_data = getPRJsonData(url_first_half,pr_id,cookie)
-            if(pr_data):
-                print(work_item_id ,pr_id," SUCCESS")
-                prData.append(pr_data)
+            if pr_id not in existing_pr_ids:
+                pr_data = getPRJsonData(url_first_half,pr_id,cookie)
+                if(pr_data):
+                    print(workitem["Id"] ,pr_id," SUCCESS")
+                    prData.append(pr_data)
     with open(prDataFile,"w") as f:
         json.dump(prData, f)
 
