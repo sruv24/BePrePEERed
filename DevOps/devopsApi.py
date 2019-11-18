@@ -2,8 +2,12 @@ import pprint
 import requests
 import json
 
+workItemsDataFile="data/workitemsdata.json"
+workItemsData=[]
+with open(workItemsDataFile) as f:
+    workItemsData = json.load(f)
 
-
+print("Loaded workItemsData : ",len(workItemsData) )
 
 def makeGETRequest(url,cookie):
     response = requests.get(url, cookies=cookie)
@@ -12,11 +16,7 @@ def makeGETRequest(url,cookie):
     else:
         print(response.status_code,response.reason)
 
-def getWorkItemJsonData(url_first_half,workitem_id,cookie):
-    url=url_first_half+"_apis/wit/workitems?ids="+str(workitem_id)+"&$expand=all&api-version=5.1"
-    data=makeGETRequest(url,cookie)
-    if(data):
-        return parseWorkItemData(url_first_half,data,cookie)
+
 
 
 def getCommentUrl(workitemdata):
@@ -35,13 +35,20 @@ def getPullRequestID(workitemdata):
     for r in relations:
         if r["rel"]=="ArtifactLink" and r["attributes"]["name"]=='Pull Request':
             pr_url=r["url"]
+            #print(r)
             return pr_url[-6:]
 
-def getPullRequestJsonData(url_first_half,pr_id):
+# def getPullRequestJsonData(url_first_half,pr_id):
+#     url=url_first_half+"_apis/wit/workitems?ids="+str(workitem_id)+"&$expand=all&api-version=5.1"
+#     data=makeGETRequest(url,cookie)
+#     if(data):
+#         return parseWorkItemData(data,cookie)
+
+def getWorkItemJsonData(url_first_half,workitem_id,cookie):
     url=url_first_half+"_apis/wit/workitems?ids="+str(workitem_id)+"&$expand=all&api-version=5.1"
     data=makeGETRequest(url,cookie)
     if(data):
-        return parseWorkItemData(data,cookie)
+        return parseWorkItemData(url_first_half,data,cookie)
 
 def parseWorkItemData(url_first_half,workitemdata,cookie):
     data=workitemdata["value"][0]
@@ -63,8 +70,24 @@ def parseWorkItemData(url_first_half,workitemdata,cookie):
     return new_data
 
 
+def getAllWorkItems(url_first_half,cookie):
+    work_item_id= 3678529
+    count=0
+    while work_item_id < 3678531:
+        try:
+            workitemdata=getWorkItemJsonData(url_first_half,work_item_id,cookie)
+            if(workitemdata):
+                print(work_item_id ," SUCCESS")
+                count+=1
+                workItemsData.append(workitemdata)
+            else:
+                print(work_item_id ," FAILED")
 
-
+        except Exception as e:
+            print(work_item_id ," FAILED ")
+        work_item_id+=1
+    with open(workItemsDataFile,"w") as f:
+        json.dump(workItemsData, f)
 
 
 
