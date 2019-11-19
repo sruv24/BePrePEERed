@@ -16,3 +16,7 @@ if os.path.exists("data/workitemsdata.json")==False:
 if os.path.exists("data/prdata.json")==False:
 	with open("data/prdata.json", 'w') as f:
 		json.dump([],f)
+
+if os.path.exists("data/devdataOverall.json")==False:
+	with open("data/devdataOverall.json", 'w') as f:
+		json.dump({},f)
